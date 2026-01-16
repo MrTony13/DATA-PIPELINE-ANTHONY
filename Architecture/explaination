@@ -1,0 +1,10 @@
+# Architecture Overview
+
+This project implements an event-driven serverless data pipeline using AWS.
+
+The architecture follows a decoupled design where:
+- S3 acts as both storage and event source
+- Lambda functions perform compute
+- Each stage is isolated for scalability and fault tolerance
+
+Data flows from Raw → Processing → Aggregation → Promotion using S3 event notifications.
