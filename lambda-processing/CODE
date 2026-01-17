@@ -1,51 +1,27 @@
 import json
 import boto3
 
-s3 = boto3.client("s3")
+s3 = boto3.client('s3')
 
-PROMOTION_BUCKET = "ecommerce-consumption-zone-yourname"
+CONSUMPTION_BUCKET = "ecommerce-consumption-zone-anthony"
 
 def lambda_handler(event, context):
-    for record in event["Records"]:
-        # Get S3 info
-        bucket_name = record["s3"]["bucket"]["name"]
-        object_key = record["s3"]["object"]["key"]
+    bucket = event["detail"]["bucket"]["name"]
+    key = event["detail"]["object"]["key"]
 
-        # Read aggregated data
-        response = s3.get_object(Bucket=bucket_name, Key=object_key)
-        aggregated_data = json.loads(response["Body"].read())
+    response = s3.get_object(Bucket=bucket, Key=key)
+    data = json.loads(response["Body"].read())
 
-        order_id = aggregated_data.get("order_id")
-        amount = aggregated_data.get("amount", 0)
-
-        # Promotion logic
-        if amount >= 500:
-            promotion = "15% DISCOUNT"
-            reason = "High value order"
-        elif amount >= 200:
-            promotion = "10% DISCOUNT"
-            reason = "Medium value order"
-        else:
-            promotion = "5% DISCOUNT"
-            reason = "Standard order"
-
-        promotion_result = {
-            "order_id": order_id,
-            "amount": amount,
-            "promotion": promotion,
-            "reason": reason,
-            "source": "Promotion Lambda",
-        }
-
-        # Write promotion result to S3
-        s3.put_object(
-            Bucket=PROMOTION_BUCKET,
-            Key=f"promotions/{order_id}.json",
-            Body=json.dumps(promotion_result),
-            ContentType="application/json"
-        )
-
-    return {
-        "status": "Promotion generated",
-        "processed_records": len(event["Records"])
+    output = {
+        "order_id": data["order_id"],
+        "amount": data["amount"],
+        "processed_via": "EventBridge"
     }
+
+    s3.put_object(
+        Bucket=CONSUMPTION_BUCKET,
+        Key=f"aggregated/{data['order_id']}.json",
+        Body=json.dumps(output)
+    )
+
+    return {"status": "processed via EventBridge"}
