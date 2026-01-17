@@ -1,7 +1,13 @@
 # DATA-PIPELINE-ANTHONY
 This project demonstrates a real-world, production-style, event-driven serverless data pipeline using AWS services
-event-driven-serverless-data-pipeline/
-│
+event-driven-serverless-data-pipeline
+
+
+
+
+
+
+
 ├── README.md
 │
 ├── architecture/
