@@ -1,0 +1,52 @@
+import json
+import boto3
+
+s3 = boto3.client("s3")
+
+# Output bucket for promotion results
+PROMOTION_BUCKET = "my-promotion-app-bucket"
+
+def lambda_handler(event, context):
+    for record in event["Records"]:
+        # Get S3 event details
+        source_bucket = record["s3"]["bucket"]["name"]
+        source_key = record["s3"]["object"]["key"]
+
+        # Read aggregated data from consumption bucket
+        response = s3.get_object(Bucket=source_bucket, Key=source_key)
+        aggregated_data = json.loads(response["Body"].read())
+
+        order_id = aggregated_data.get("order_id")
+        amount = aggregated_data.get("amount", 0)
+
+        # Promotion logic
+        if amount >= 500:
+            promotion = "15% DISCOUNT"
+            reason = "High value order"
+        elif amount >= 200:
+            promotion = "10% DISCOUNT"
+            reason = "Medium value order"
+        else:
+            promotion = "5% DISCOUNT"
+            reason = "Standard order"
+
+        promotion_result = {
+            "order_id": order_id,
+            "amount": amount,
+            "promotion": promotion,
+            "reason": reason,
+            "generated_by": "Promotion Lambda"
+        }
+
+        # Store promotion result in promotion bucket
+        s3.put_object(
+            Bucket=PROMOTION_BUCKET,
+            Key=f"promotions/{order_id}.json",
+            Body=json.dumps(promotion_result),
+            ContentType="application/json"
+        )
+
+    return {
+        "status": "Promotion generated",
+        "records_processed": len(event["Records"])
+    }
